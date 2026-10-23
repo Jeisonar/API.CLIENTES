@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cartera de clientes | API.CLIENTES</title>
+<meta name="description" content="Panel para probar la API RESTful de clientes: iniciar sesión, consultar, agregar, actualizar y eliminar clientes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#18222d; --muted:#5b6670; --paper:#eef1ec; --surface:#ffffff; --surface-2:#f6f8f5;
+  --line:#d5dbd3; --brand:#0f6b5c; --brand-ink:#ffffff; --brand-soft:#dcece7;
+  --danger:#b42d3f; --danger-soft:#f6e1e3; --ok:#1d7a46; --ok-soft:#dff1e6;
+  --focus:#c98b12;
+  --p1:#0f6b5c; --p2:#c2453a; --p3:#d49a1e; --p4:#2b78b5; --p5:#8a5bb0; --p6:#1f9aa0; --p7:#5c8a2f;
+  --get:#1d7a46; --post:#2b6cb0; --put:#b7791f; --delete:#b42d3f;
+  --radius-lg:18px; --radius:10px; --radius-sm:6px;
+  --font:"Schibsted Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --ink:#e7ece8; --muted:#9aa6a0; --paper:#111916; --surface:#18221e; --surface-2:#1e2a25;
+    --line:#2c3a34; --brand:#3fb39b; --brand-ink:#08130f; --brand-soft:#1d3a33;
+    --danger:#ef7a87; --danger-soft:#3a1f24; --ok:#5fcf8c; --ok-soft:#183324;
+    --get:#5fcf8c; --post:#7ab0ec; --put:#e7b65a; --delete:#ef7a87;
+    color-scheme:dark;
+  }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font:400 16px/1.5 var(--font);}
+a{color:var(--brand)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+.num{font-variant-numeric:tabular-nums}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Barra superior */
+.top{border-bottom:1px solid var(--line);background:var(--surface)}
+.top .wrap{display:flex;align-items:center;gap:16px;min-height:64px;flex-wrap:wrap}
+.mark{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;text-decoration:none;color:var(--ink)}
+.mark svg{flex:none}
+.top nav{margin-left:auto;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.top nav a{padding:8px 12px;border-radius:999px;text-decoration:none;color:var(--ink);font-weight:500}
+.top nav a:hover{background:var(--surface-2)}
+.estado{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;color:var(--muted);padding:6px 12px;border:1px solid var(--line);border-radius:999px}
+.estado i{width:9px;height:9px;border-radius:50%;background:#9aa6a0}
+.estado.on i{background:var(--ok);box-shadow:0 0 0 4px var(--ok-soft)}
+.estado.off i{background:var(--danger)}
+
+/* Encabezado */
+.head{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(300px,1fr);gap:28px;padding:40px 0 28px;align-items:start}
+h1{font-size:clamp(2.3rem,5.2vw,3.7rem);line-height:1.02;letter-spacing:-.035em;margin:0 0 14px;font-weight:800}
+.lead{color:var(--muted);max-width:56ch;margin:0 0 26px;font-size:1.06rem}
+.resumen{font-size:1.05rem;margin:0 0 12px}
+.resumen b{font-size:1.6rem;letter-spacing:-.02em}
+
+/* Franja de provincias: lo memorable */
+.franja{display:flex;height:46px;border-radius:var(--radius);overflow:hidden;background:var(--surface);border:1px solid var(--line)}
+.franja button{border:0;padding:0;min-width:6px;cursor:pointer;position:relative;transition:filter .15s, flex-grow .5s cubic-bezier(.2,.8,.2,1)}
+.franja button:hover{filter:brightness(1.08)}
+.franja button[aria-pressed="true"]{box-shadow:inset 0 0 0 3px var(--surface)}
+.franja .vacia{flex-grow:0 !important;width:0;min-width:0}
+.leyenda{display:flex;flex-wrap:wrap;gap:6px 14px;margin:12px 0 0;padding:0;list-style:none}
+.leyenda button{display:inline-flex;align-items:center;gap:7px;border:0;background:none;padding:4px 2px;cursor:pointer;color:var(--ink);font-size:.93rem}
+.leyenda button span.c{width:12px;height:12px;border-radius:3px}
+.leyenda button .n{color:var(--muted)}
+.leyenda button[aria-pressed="true"]{font-weight:700;text-decoration:underline;text-underline-offset:4px}
+.leyenda button.cero{opacity:.55}
+
+/* Tarjetas laterales */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);padding:22px}
+.card h2{font-size:1.2rem;margin:0 0 4px;letter-spacing:-.01em}
+.card p.sub{margin:0 0 16px;color:var(--muted);font-size:.95rem}
+.lado{display:grid;gap:16px}
+label.campo{display:grid;gap:6px;font-weight:500;font-size:.93rem}
+.campo input,.campo select,.campo textarea{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--surface-2);min-height:44px}
+.campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--brand);outline:none;box-shadow:0 0 0 3px var(--brand-soft)}
+.campo .opc{color:var(--muted);font-weight:400}
+.pila{display:grid;gap:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 18px;border-radius:var(--radius-sm);border:1px solid transparent;font-weight:600;cursor:pointer;text-decoration:none;transition:background .15s,border-color .15s}
+.btn-p{background:var(--brand);color:var(--brand-ink)}
+.btn-p:hover{filter:brightness(1.07)}
+.btn-s{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.btn-s:hover{border-color:var(--ink)}
+.btn-d{background:var(--danger);color:#fff}
+.btn-link{background:none;border:0;color:var(--brand);padding:0;min-height:auto;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.btn[disabled]{opacity:.6;cursor:progress}
+.aviso{margin:0;padding:10px 12px;border-radius:var(--radius-sm);font-size:.93rem}
+.aviso.ok{background:var(--ok-soft);color:var(--ok)}
+.aviso.err{background:var(--danger-soft);color:var(--danger)}
+.quien{display:flex;align-items:center;gap:14px}
+.avatar{width:48px;height:48px;border-radius:50%;background:var(--brand);color:var(--brand-ink);display:grid;place-items:center;font-weight:700;font-size:1.1rem;flex:none}
+.quien b{display:block;font-size:1.08rem}
+.quien span{color:var(--muted);font-size:.93rem}
+
+/* Última respuesta */
+.consola{background:#0f1c18;color:#d9efe7;padding:16px 20px;font-size:.85rem;overflow:hidden}
+.consola .linea{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.consola pre{margin:0;max-height:220px;overflow:auto;white-space:pre-wrap;word-break:break-word;font:12.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#bfe3d6}
+.consola .vacio{color:#8fb3a6}
+.metodo{display:inline-block;font:700 .74rem/1 var(--font);letter-spacing:.04em;padding:5px 8px;border-radius:5px;color:#fff;min-width:58px;text-align:center}
+.m-GET{background:var(--get)} .m-POST{background:var(--post)} .m-PUT{background:var(--put)} .m-DELETE{background:var(--delete)}
+@media (prefers-color-scheme: dark){ .metodo{color:#0c1512} }
+.codigo{margin-left:auto;color:#8fb3a6}
+
+/* Panel de clientes */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-lg);margin:12px 0 40px;overflow:hidden}
+.barra{display:flex;flex-wrap:wrap;gap:12px;align-items:end;padding:18px 20px;border-bottom:1px solid var(--line)}
+.barra h2{margin:0 auto 0 0;font-size:1.35rem;letter-spacing:-.015em;align-self:center}
+.barra .campo{min-width:200px}
+.buscar-id{display:flex;gap:8px;align-items:end}
+.buscar-id .campo{min-width:120px;width:130px}
+.filtro-activo{display:flex;align-items:center;gap:10px;padding:10px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:.93rem}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+th{font-size:.85rem;color:var(--muted);font-weight:600;background:var(--surface-2)}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.resaltado{background:var(--brand-soft)}
+td .nombre{font-weight:600}
+td .correo{color:var(--muted);font-size:.9rem}
+.prov{display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.prov i{width:10px;height:10px;border-radius:3px}
+.acciones{display:flex;gap:6px;justify-content:flex-end}
+.acciones button{min-height:36px;padding:6px 12px;font-size:.9rem}
+.bloqueado,.vacio-tabla{padding:48px 20px;text-align:center;color:var(--muted)}
+.bloqueado h3,.vacio-tabla h3{color:var(--ink);margin:0 0 6px;font-size:1.15rem}
+
+/* Ficha (consulta por Id) */
+.ficha{margin:16px 20px;padding:18px;border:2px solid var(--brand);border-radius:var(--radius);display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px 20px;position:relative}
+.ficha dt{font-size:.82rem;color:var(--muted)} .ficha dd{margin:2px 0 0;font-weight:600;word-break:break-word}
+.ficha .cerrar{position:absolute;top:8px;right:8px}
+.ficha .tit{grid-column:1/-1;display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding-right:40px}
+.ficha .tit h3{margin:0;font-size:1.15rem}
+
+/* Endpoints */
+.endpoints{margin:0 0 48px}
+.endpoints h2{font-size:1.6rem;letter-spacing:-.02em;margin:0 0 6px}
+.endpoints > p{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.ep{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:8px}
+.ep summary{display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:14px;align-items:center;padding:14px 16px;cursor:pointer;list-style:none}
+.ep summary::-webkit-details-marker{display:none}
+.ep code.ruta{font:600 .95rem ui-monospace,SFMono-Regular,Consolas,monospace;word-break:break-all}
+.ep .que{color:var(--muted);font-size:.93rem;text-align:right}
+.ep .cuerpo{padding:0 16px 16px 106px}
+.ep pre{margin:0;background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px;overflow:auto;font:12.5px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
+.ep .sin{color:var(--muted);font-size:.93rem;margin:0}
+
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--muted);font-size:.9rem}
+
+/* Ventanas (formulario y confirmación) */
+dialog{border:0;padding:0;border-radius:var(--radius-lg);background:var(--surface);color:var(--ink);width:min(640px,calc(100vw - 24px));max-height:calc(100vh - 24px)}
+dialog::backdrop{background:rgba(10,20,16,.55)}
+dialog[open]{animation:entra .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes entra{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+.dlg-cab{padding:20px 22px 0}
+.dlg-cab h2{margin:0;font-size:1.3rem}
+.dlg-cab p{margin:4px 0 0;color:var(--muted)}
+.dlg-cuerpo{padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dlg-cuerpo .full{grid-column:1/-1}
+.dlg-pie{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px 20px;border-top:1px solid var(--line)}
+
+/* Avisos flotantes */
+.toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:grid;gap:8px;z-index:50;width:min(520px,calc(100vw - 24px))}
+.toast{padding:12px 16px;border-radius:var(--radius);background:var(--ink);color:var(--surface);box-shadow:0 10px 30px rgba(0,0,0,.25);display:flex;gap:10px;align-items:flex-start;animation:entra .2s ease-out}
+.toast.err{background:var(--danger);color:#fff}
+
+@media (max-width: 900px){
+  .head{grid-template-columns:1fr;padding-top:28px}
+}
+@media (max-width: 720px){
+  .barra h2{width:100%}
+  .barra .campo{min-width:0;flex:1 1 100%}
+  .buscar-id{flex:1 1 100%}
+  .buscar-id .campo{flex:1;width:auto}
+  table thead{display:none}
+  table,tbody,tr,td{display:block;width:100%}
+  tbody tr{padding:12px 16px;border-bottom:1px solid var(--line)}
+  td{border:0;padding:3px 0}
+  td[data-k]::before{content:attr(data-k) ": ";color:var(--muted);font-size:.85rem}
+  .acciones{justify-content:flex-start;margin-top:8px}
+  .dlg-cuerpo{grid-template-columns:1fr}
+  .ep summary{grid-template-columns:70px minmax(0,1fr)}
+  .ep .que{grid-column:1/-1;text-align:left}
+  .ep .cuerpo{padding-left:16px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="mark" href="/" aria-label="Cartera de clientes, inicio">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true">
+        <rect x="1" y="5" width="28" height="20" rx="5" fill="var(--brand)"/>
+        <rect x="5" y="10" width="9" height="2.6" rx="1.3" fill="var(--brand-ink)"/>
+        <rect x="5" y="15" width="15" height="2.6" rx="1.3" fill="var(--brand-ink)" opacity=".7"/>
+        <circle cx="22" cy="11.3" r="2.6" fill="var(--brand-ink)"/>
+      </svg>
+      API.CLIENTES
+    </a>
+    <nav aria-label="Enlaces">
+      <span id="estado" class="estado" role="status"><i></i><span>Comprobando la API…</span></span>
+      <a href="#endpoints">Endpoints</a>
+      <a href="/swagger">Swagger</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="head">
+    <div>
+      <h1>Cartera de clientes</h1>
+      <p class="lead">Inicia sesión para consultar, agregar, actualizar y eliminar clientes. Cada cambio pasa por la API y se guarda en la base de datos SQL Server.</p>
+      <p class="resumen" id="resumen"><b class="num">–</b> clientes registrados</p>
+      <div class="franja" id="franja" role="group" aria-label="Clientes por provincia. Elige una provincia para filtrar la lista."></div>
+      <ul class="leyenda" id="leyenda"></ul>
+    </div>
+
+    <div class="lado">
+      <div class="card" id="tarjeta-sesion"></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="t-clientes">
+    <div class="barra">
+      <h2 id="t-clientes">Clientes</h2>
+      <label class="campo">Buscar en la lista
+        <input id="filtro" type="search" placeholder="Nombre, cédula o correo" autocomplete="off">
+      </label>
+      <form class="buscar-id" id="form-id">
+        <label class="campo">Consultar por Id
+          <input id="buscar-id" class="num" type="number" min="1" inputmode="numeric" placeholder="Ej. 1" required>
+        </label>
+        <button class="btn btn-s" type="submit">Consultar</button>
+      </form>
+      <button class="btn btn-p" id="btn-nuevo" type="button">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Agregar cliente
+      </button>
+    </div>
+    <div id="ficha"></div>
+    <div id="filtro-activo"></div>
+    <div id="tabla"></div>
+    <div class="consola" aria-live="polite">
+      <div class="linea"><strong>Última respuesta de la API</strong></div>
+      <div id="consola"><p class="vacio" style="margin:0">Aquí aparece lo que responde la API en cada operación: método, ruta, código y el JSON completo.</p></div>
+    </div>
+  </section>
+
+  <section class="endpoints" id="endpoints" aria-labelledby="t-ep">
+    <h2 id="t-ep">Endpoints de la API</h2>
+    <p>Todas las respuestas tienen la forma <code>{ "ok", "mensaje", "valorRetorno" }</code>. Abre cada endpoint para ver un ejemplo del cuerpo de la solicitud. También puedes probarlos uno por uno en <a href="/swagger">Swagger</a>.</p>
+    <div id="lista-ep"></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">API RESTful en C# con .NET 10, arquitectura en capas (Controlador, BLL, DAL) y procedimientos almacenados en SQL Server.</div>
+</footer>
+
+<dialog id="dlg-cliente" aria-labelledby="dlg-cliente-t">
+  <form id="form-cliente" novalidate>
+    <div class="dlg-cab">
+      <h2 id="dlg-cliente-t">Agregar cliente</h2>
+      <p id="dlg-cliente-s">Los campos marcados como opcionales se pueden dejar vacíos.</p>
+    </div>
+    <div class="dlg-cuerpo">
+      <label class="campo">Cédula<input name="cedula" maxlength="20" required placeholder="1-1111-1111" class="num"></label>
+      <label class="campo">Provincia<select name="idProvincia" required></select></label>
+      <label class="campo">Nombre<input name="nombre" maxlength="50" required></label>
+      <label class="campo">Primer apellido<input name="apellido1" maxlength="50" required></label>
+      <label class="campo"><span>Segundo apellido <span class="opc">(opcional)</span></span><input name="apellido2" maxlength="50"></label>
+      <label class="campo">Teléfono<input name="telefono" maxlength="20" required placeholder="+506 8888-8888" class="num"></label>
+      <label class="campo full">Correo<input name="correo" type="email" maxlength="100" required placeholder="nombre@correo.com"></label>
+      <label class="campo full"><span>Dirección <span class="opc">(opcional)</span></span><textarea name="direccion" maxlength="500" rows="2"></textarea></label>
+      <p class="aviso err full" id="dlg-error" hidden></p>
+    </div>
+    <div class="dlg-pie">
+      <button class="btn btn-s" type="button" data-cerrar>Cancelar</button>
+      <button class="btn btn-p" type="submit" id="btn-guardar">Guardar cliente</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-borrar" aria-labelledby="dlg-borrar-t">
+  <div class="dlg-cab">
+    <h2 id="dlg-borrar-t">Eliminar cliente</h2>
+    <p id="dlg-borrar-s"></p>
+  </div>
+  <div class="dlg-pie" style="border-top:0">
+    <button class="btn btn-s" type="button" data-cerrar>Cancelar</button>
+    <button class="btn btn-d" type="button" id="btn-borrar">Eliminar cliente</button>
+  </div>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="assertive"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const PROVINCIAS = [
+    { id: 1, nombre: "San José",   color: "var(--p1)" },
+    { id: 2, nombre: "Alajuela",   color: "var(--p2)" },
+    { id: 3, nombre: "Cartago",    color: "var(--p3)" },
+    { id: 4, nombre: "Heredia",    color: "var(--p4)" },
+    { id: 5, nombre: "Guanacaste", color: "var(--p5)" },
+    { id: 6, nombre: "Puntarenas", color: "var(--p6)" },
+    { id: 7, nombre: "Limón",      color: "var(--p7)" }
+  ];
+  const provincia = id => PROVINCIAS.find(p => p.id === id) || { nombre: "Sin provincia", color: "var(--muted)" };
+
+  const ENDPOINTS = [
+    { m: "POST",   r: "/api/InicioSesion", q: "Iniciar sesión validando las credenciales en la base de datos",
+      b: { Correo: "admin@apiclientes.com", Contrasena: "Admin1234" } },
+    { m: "GET",    r: "/api/Clientes", q: "Consultar todos los clientes" },
+    { m: "GET",    r: "/api/Clientes/{IdCliente}", q: "Consultar un cliente por su Id" },
+    { m: "POST",   r: "/api/Clientes", q: "Agregar un cliente nuevo",
+      b: { Cedula: "3-0333-0333", Nombre: "Andrés", Apellido1: "Castro", Apellido2: "Mora", Telefono: "+506 8899-0011",
+           Correo: "andres.castro@correo.com", Direccion: "Cartago centro", IdProvincia: 3 } },
+    { m: "PUT",    r: "/api/Clientes/{IdCliente}", q: "Actualizar un cliente por su Id",
+      b: { Cedula: "3-0333-0333", Nombre: "Andrés", Apellido1: "Castro", Apellido2: "Mora", Telefono: "+506 8899-2222",
+           Correo: "andres.castro@empresa.com", Direccion: "Paraíso de Cartago", IdProvincia: 3 } },
+    { m: "DELETE", r: "/api/Clientes/{IdCliente}", q: "Eliminar un cliente por su Id" }
+  ];
+
+  const $ = s => document.querySelector(s);
+  const el = (tag, props = {}, ...hijos) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(props)) {
+      if (v == null) continue;
+      if (k === "class") n.className = v;
+      else if (k === "style") n.setAttribute("style", v);
+      else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+      else if (k in n && typeof v !== "string") n[k] = v;
+      else n.setAttribute(k, v);
+    }
+    for (const h of hijos.flat()) if (h != null && h !== false) n.append(h);
+    return n;
+  };
+
+  const almacen = {
+    leer() { try { return JSON.parse(sessionStorage.getItem("sesionApiClientes") || "null"); } catch { return null; } },
+    guardar(v) { try { v ? sessionStorage.setItem("sesionApiClientes", JSON.stringify(v)) : sessionStorage.removeItem("sesionApiClientes"); } catch { } }
+  };
+
+  const estado = { sesion: almacen.leer(), clientes: [], filtroTexto: "", filtroProv: null, editando: null, borrando: null, resaltado: null };
+
+  /* ---------- Llamadas a la API ---------- */
+  async function api(metodo, ruta, cuerpo) {
+    const inicio = performance.now();
+    let status = 0, datos = null;
+    try {
+      const r = await fetch(ruta, {
+        method: metodo,
+        headers: { "Accept": "application/json", ...(cuerpo ? { "Content-Type": "application/json" } : {}) },
+        body: cuerpo ? JSON.stringify(cuerpo) : undefined
+      });
+      status = r.status;
+      const texto = await r.text();
+      try { datos = JSON.parse(texto); } catch { datos = { ok: false, mensaje: `La API respondió ${r.status} sin JSON.` }; }
+      if (!r.ok && datos && datos.ok === undefined) {
+        datos = { ok: false, mensaje: datos.title || `La API respondió con el código ${r.status}.`, detalle: datos.errors || null };
+      }
+    } catch (e) {
+      datos = { ok: false, mensaje: "No se pudo conectar con la API. Revisa tu conexión e inténtalo de nuevo." };
+    }
+    mostrarConsola(metodo, ruta, status, Math.round(performance.now() - inicio), datos, cuerpo);
+    return datos || { ok: false, mensaje: "Respuesta vacía de la API." };
+  }
+
+  function mostrarConsola(metodo, ruta, status, ms, datos, cuerpo) {
+    const caja = $("#consola");
+    const copia = cuerpo && cuerpo.Contrasena ? { ...cuerpo, Contrasena: "••••••" } : cuerpo;
+    const partes = [
+      el("div", { class: "linea" },
+        el("span", { class: "metodo m-" + metodo }, metodo),
+        el("code", {}, ruta),
+        el("span", { class: "codigo num" }, `${status || "sin respuesta"} · ${ms} ms`))
+    ];
+    if (copia) partes.push(el("pre", { style: "margin-bottom:8px;color:#8fb3a6" }, "Cuerpo enviado: " + JSON.stringify(copia)));
+    partes.push(el("pre", {}, JSON.stringify(datos, null, 2)));
+    caja.replaceChildren(...partes);
+  }
+
+  function aviso(texto, tipo = "ok") {
+    const t = el("div", { class: "toast" + (tipo === "err" ? " err" : ""), role: "status" }, texto);
+    $("#toasts").append(t);
+    setTimeout(() => t.remove(), 4200);
+  }
+
+  /* ---------- Estado de la API ---------- */
+  async function comprobarApi() {
+    const caja = $("#estado");
+    try {
+      const r = await fetch("/api/Clientes", { headers: { Accept: "application/json" } });
+      const d = await r.json();
+      caja.className = "estado " + (d.ok ? "on" : "off");
+      caja.querySelector("span").textContent = d.ok ? "API en línea" : "La API no llega a la base de datos";
+      if (d.ok) { estado.clientes = d.valorRetorno || []; pintarResumen(); }
+    } catch {
+      caja.className = "estado off";
+      caja.querySelector("span").textContent = "API sin conexión";
+    }
+  }
+
+  /* ---------- Sesión ---------- */
+  function pintarSesion() {
+    const t = $("#tarjeta-sesion");
+    if (estado.sesion) {
+      const s = estado.sesion;
+      const iniciales = (s.nombreCompleto || "?").split(/\s+/).map(p => p[0]).slice(0, 2).join("").toUpperCase();
+      t.replaceChildren(
+        el("div", { class: "quien" },
+          el("div", { class: "avatar", "aria-hidden": "true" }, iniciales),
+          el("div", {}, el("b", {}, s.nombreCompleto), el("span", {}, `${s.nombreRol} · ${s.correo}`))),
+        el("p", { class: "aviso ok", style: "margin-top:16px" }, "Sesión iniciada. Ya puedes administrar los clientes."),
+        el("div", { style: "margin-top:14px" }, el("button", { class: "btn btn-s", type: "button", onclick: cerrarSesion }, "Cerrar sesión"))
+      );
+      return;
+    }
+    const msg = el("p", { class: "aviso err", hidden: true });
+    const correo = el("input", { type: "email", name: "correo", autocomplete: "username", required: true, placeholder: "nombre@correo.com" });
+    const clave = el("input", { type: "password", name: "contrasena", autocomplete: "current-password", required: true });
+    const boton = el("button", { class: "btn btn-p", type: "submit" }, "Iniciar sesión");
+    const form = el("form", { class: "pila", onsubmit: async e => {
+        e.preventDefault();
+        msg.hidden = true;
+        if (!correo.value.trim() || !clave.value) { msg.textContent = "Escribe el correo y la contraseña."; msg.hidden = false; return; }
+        boton.disabled = true; boton.textContent = "Validando…";
+        const r = await api("POST", "/api/InicioSesion", { Correo: correo.value.trim(), Contrasena: clave.value });
+        boton.disabled = false; boton.textContent = "Iniciar sesión";
+        if (r.ok && r.valorRetorno) {
+          estado.sesion = r.valorRetorno; almacen.guardar(estado.sesion);
+          aviso("Bienvenido, " + r.valorRetorno.nombreCompleto);
+          pintarSesion(); cargarClientes();
+        } else { msg.textContent = r.mensaje || "No se pudo iniciar sesión."; msg.hidden = false; clave.select(); }
+      } },
+      el("label", { class: "campo" }, "Correo", correo),
+      el("label", { class: "campo" }, "Contraseña", clave),
+      msg, boton,
+      el("p", { class: "sub", style: "margin:0" }, "Para probar: ",
+        el("button", { class: "btn-link", type: "button", onclick: () => { correo.value = "admin@apiclientes.com"; clave.value = "Admin1234"; boton.focus(); } }, "usar el usuario de prueba"))
+    );
+    t.replaceChildren(el("h2", {}, "Iniciar sesión"), el("p", { class: "sub" }, "Las credenciales se validan contra la tabla de usuarios."), form);
+  }
+
+  function cerrarSesion() {
+    estado.sesion = null; almacen.guardar(null);
+    $("#ficha").replaceChildren();
+    pintarSesion(); pintarTabla();
+    aviso("Sesión cerrada");
+  }
+
+  /* ---------- Clientes ---------- */
+  async function cargarClientes() {
+    if (!estado.sesion) return pintarTabla();
+    const r = await api("GET", "/api/Clientes");
+    if (r.ok) estado.clientes = r.valorRetorno || [];
+    else aviso(r.mensaje, "err");
+    pintarResumen(); pintarTabla();
+  }
+
+  function pintarResumen() {
+    const lista = estado.clientes;
+    const nProv = new Set(lista.map(c => c.idProvincia)).size;
+    $("#resumen").replaceChildren(el("b", { class: "num" }, String(lista.length)),
+      ` ${lista.length === 1 ? "cliente registrado" : "clientes registrados"} en ${nProv} ${nProv === 1 ? "provincia" : "provincias"}`);
+    const franja = $("#franja"), leyenda = $("#leyenda");
+    franja.replaceChildren(); leyenda.replaceChildren();
+    for (const p of PROVINCIAS) {
+      const n = lista.filter(c => c.idProvincia === p.id).length;
+      const activo = estado.filtroProv === p.id;
+      franja.append(el("button", {
+        type: "button", class: n ? null : "vacia", style: `flex-grow:${n};background:${p.color}`,
+        title: `${p.nombre}: ${n}`, "aria-label": `${p.nombre}, ${n} ${n === 1 ? "cliente" : "clientes"}`,
+        "aria-pressed": String(activo), tabIndex: n ? 0 : -1, onclick: () => filtrarProvincia(p.id)
+      }));
+      leyenda.append(el("li", {}, el("button", {
+        type: "button", class: n ? null : "cero", "aria-pressed": String(activo), onclick: () => filtrarProvincia(p.id)
+      }, el("span", { class: "c", style: `background:${p.color}` }), p.nombre, el("span", { class: "n num" }, String(n)))));
+    }
+    if (!lista.length) franja.append(el("span", { style: "margin:auto;color:var(--muted);font-size:.9rem" }, "Sin clientes todavía"));
+  }
+
+  function filtrarProvincia(id) {
+    estado.filtroProv = estado.filtroProv === id ? null : id;
+    pintarResumen(); pintarTabla();
+  }
+
+  function visibles() {
+    const q = estado.filtroTexto.trim().toLowerCase();
+    return estado.clientes.filter(c =>
+      (!estado.filtroProv || c.idProvincia === estado.filtroProv) &&
+      (!q || [c.cedula, c.nombre, c.apellido1, c.apellido2, c.correo, c.telefono].join(" ").toLowerCase().includes(q)));
+  }
+
+  const nombreCompleto = c => [c.nombre, c.apellido1, c.apellido2].filter(Boolean).join(" ");
+  const fecha = f => f ? new Date(f).toLocaleDateString("es-CR", { day: "numeric", month: "short", year: "numeric" }) : "";
+
+  function pintarTabla() {
+    const cont = $("#tabla"), fa = $("#filtro-activo");
+    fa.replaceChildren();
+    if (!estado.sesion) {
+      cont.replaceChildren(el("div", { class: "bloqueado" },
+        el("h3", {}, "Inicia sesión para ver los clientes"),
+        el("p", { style: "margin:0" }, "Usa el formulario de arriba. Si solo quieres revisar la API, puedes usar el usuario de prueba.")));
+      return;
+    }
+    if (estado.filtroProv) {
+      fa.append(el("div", { class: "filtro-activo" },
+        `Mostrando solo clientes de ${provincia(estado.filtroProv).nombre}.`,
+        el("button", { class: "btn-link", type: "button", onclick: () => filtrarProvincia(estado.filtroProv) }, "Ver todas las provincias")));
+    }
+    const lista = visibles();
+    if (!lista.length) {
+      cont.replaceChildren(el("div", { class: "vacio-tabla" },
+        el("h3", {}, estado.clientes.length ? "Ningún cliente coincide con la búsqueda" : "Todavía no hay clientes"),
+        el("p", { style: "margin:0 0 14px" }, estado.clientes.length ? "Prueba con otro nombre, cédula o provincia." : "Agrega el primero con el botón Agregar cliente."),
+        estado.clientes.length ? null : el("button", { class: "btn btn-p", type: "button", onclick: () => abrirFormulario() }, "Agregar cliente")));
+      return;
+    }
+    const filas = lista.map(c => {
+      const p = provincia(c.idProvincia);
+      return el("tr", { class: estado.resaltado === c.idCliente ? "resaltado" : null },
+        el("td", { class: "num", "data-k": "Id" }, String(c.idCliente)),
+        el("td", { class: "num", "data-k": "Cédula" }, c.cedula),
+        el("td", {}, el("div", { class: "nombre" }, nombreCompleto(c)), el("div", { class: "correo" }, c.correo)),
+        el("td", { class: "num", "data-k": "Teléfono" }, c.telefono),
+        el("td", { "data-k": "Provincia" }, el("span", { class: "prov" }, el("i", { style: `background:${p.color}` }), c.nombreProvincia || p.nombre)),
+        el("td", { class: "num", "data-k": "Registro" }, fecha(c.fechaRegistro)),
+        el("td", {}, el("div", { class: "acciones" },
+          el("button", { class: "btn btn-s", type: "button", onclick: () => abrirFormulario(c), "aria-label": "Editar a " + nombreCompleto(c) }, "Editar"),
+          el("button", { class: "btn btn-s", type: "button", style: "color:var(--danger)", onclick: () => pedirBorrado(c), "aria-label": "Eliminar a " + nombreCompleto(c) }, "Eliminar")))
+      );
+    });
+    cont.replaceChildren(el("table", {},
+      el("caption", { class: "sr" }, "Lista de clientes"),
+      el("thead", {}, el("tr", {}, ["Id", "Cédula", "Cliente", "Teléfono", "Provincia", "Registro", ""].map(h => el("th", { scope: "col" }, h || el("span", { class: "sr" }, "Acciones"))))),
+      el("tbody", {}, filas)));
+  }
+
+  /* ---------- Consultar por Id ---------- */
+  async function consultarPorId(id) {
+    if (!estado.sesion) { aviso("Inicia sesión para consultar clientes.", "err"); return; }
+    const r = await api("GET", "/api/Clientes/" + encodeURIComponent(id));
+    const ficha = $("#ficha");
+    if (!r.ok || !r.valorRetorno) {
+      ficha.replaceChildren(el("p", { class: "aviso err", style: "margin:16px 20px" }, r.mensaje || "No se encontró el cliente."));
+      return;
+    }
+    const c = r.valorRetorno, p = provincia(c.idProvincia);
+    const dato = (k, v) => [el("dt", {}, k), el("dd", { class: "num" }, v || "Sin dato")];
+    ficha.replaceChildren(el("div", { class: "ficha", role: "region", "aria-label": "Cliente consultado por Id" },
+      el("div", { class: "tit" },
+        el("span", { class: "metodo m-GET" }, "GET"),
+        el("h3", {}, `${nombreCompleto(c)}`),
+        el("span", { class: "prov" }, el("i", { style: `background:${p.color}` }), c.nombreProvincia)),
+      el("button", { class: "btn btn-s cerrar", type: "button", "aria-label": "Cerrar ficha", onclick: () => ficha.replaceChildren(), style: "min-height:34px;padding:4px 10px" }, "✕"),
+      el("dl", { style: "display:contents" },
+        el("div", {}, ...dato("Id", String(c.idCliente))),
+        el("div", {}, ...dato("Cédula", c.cedula)),
+        el("div", {}, ...dato("Teléfono", c.telefono)),
+        el("div", {}, ...dato("Correo", c.correo)),
+        el("div", {}, ...dato("Dirección", c.direccion)),
+        el("div", {}, ...dato("Registrado", fecha(c.fechaRegistro)))),
+      el("div", { class: "acciones", style: "grid-column:1/-1;justify-content:flex-start" },
+        el("button", { class: "btn btn-s", type: "button", onclick: () => abrirFormulario(c) }, "Editar"),
+        el("button", { class: "btn btn-s", type: "button", style: "color:var(--danger)", onclick: () => pedirBorrado(c) }, "Eliminar"))
+    ));
+  }
+
+  /* ---------- Formulario agregar / editar ---------- */
+  const dlg = $("#dlg-cliente"), form = $("#form-cliente");
+  form.idProvincia.replaceChildren(el("option", { value: "" }, "Elige una provincia"), ...PROVINCIAS.map(p => el("option", { value: String(p.id) }, p.nombre)));
+
+  function abrirFormulario(c = null) {
+    if (!estado.sesion) { aviso("Inicia sesión para agregar o editar clientes.", "err"); return; }
+    estado.editando = c;
+    form.reset();
+    $("#dlg-error").hidden = true;
+    $("#dlg-cliente-t").textContent = c ? `Editar cliente ${c.idCliente}` : "Agregar cliente";
+    $("#dlg-cliente-s").textContent = c ? "Cambia los datos y guarda. La cédula no puede ser la de otro cliente." : "Los campos marcados como opcionales se pueden dejar vacíos.";
+    $("#btn-guardar").textContent = c ? "Guardar cambios" : "Guardar cliente";
+    if (c) for (const k of ["cedula", "nombre", "apellido1", "apellido2", "telefono", "correo", "direccion"]) form[k].value = c[k] || "";
+    form.idProvincia.value = c ? String(c.idProvincia) : "";
+    dlg.showModal();
+    form.cedula.focus();
+  }
+
+  form.addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = $("#dlg-error");
+    err.hidden = true;
+    const f = Object.fromEntries(new FormData(form));
+    const faltan = [["cedula", "la cédula"], ["nombre", "el nombre"], ["apellido1", "el primer apellido"], ["telefono", "el teléfono"], ["correo", "el correo"], ["idProvincia", "la provincia"]]
+      .filter(([k]) => !String(f[k] || "").trim()).map(([, t]) => t);
+    if (faltan.length) { err.textContent = "Falta " + faltan.join(", ") + "."; err.hidden = false; return; }
+    const cuerpo = {
+      Cedula: f.cedula.trim(), Nombre: f.nombre.trim(), Apellido1: f.apellido1.trim(), Apellido2: f.apellido2.trim() || null,
+      Telefono: f.telefono.trim(), Correo: f.correo.trim(), Direccion: f.direccion.trim() || null, IdProvincia: Number(f.idProvincia)
+    };
+    const boton = $("#btn-guardar"); const texto = boton.textContent;
+    boton.disabled = true; boton.textContent = "Guardando…";
+    const editando = estado.editando;
+    const r = editando ? await api("PUT", "/api/Clientes/" + editando.idCliente, cuerpo) : await api("POST", "/api/Clientes", cuerpo);
+    boton.disabled = false; boton.textContent = texto;
+    if (!r.ok) { err.textContent = r.mensaje || "No se pudo guardar el cliente."; err.hidden = false; return; }
+    dlg.close();
+    const id = editando ? editando.idCliente : r.valorRetorno && r.valorRetorno.idCliente;
+    estado.resaltado = id;
+    aviso(editando ? `Cliente ${id} actualizado` : `Cliente agregado con el Id ${id}`);
+    if ($("#ficha").firstChild && editando) consultarPorId(id);
+    await cargarClientes();
+    setTimeout(() => { estado.resaltado = null; pintarTabla(); }, 3500);
+  });
+
+  /* ---------- Eliminar ---------- */
+  const dlgB = $("#dlg-borrar");
+  function pedirBorrado(c) {
+    if (!estado.sesion) return;
+    estado.borrando = c;
+    $("#dlg-borrar-s").textContent = `Vas a eliminar a ${nombreCompleto(c)} (Id ${c.idCliente}, cédula ${c.cedula}). El registro se borra de la base de datos.`;
+    dlgB.showModal();
+    dlgB.querySelector("[data-cerrar]").focus();
+  }
+  $("#btn-borrar").addEventListener("click", async () => {
+    const c = estado.borrando; if (!c) return;
+    const b = $("#btn-borrar"); b.disabled = true; b.textContent = "Eliminando…";
+    const r = await api("DELETE", "/api/Clientes/" + c.idCliente);
+    b.disabled = false; b.textContent = "Eliminar cliente";
+    dlgB.close();
+    if (r.ok) { aviso(`Cliente ${c.idCliente} eliminado`); $("#ficha").replaceChildren(); }
+    else aviso(r.mensaje || "No se pudo eliminar el cliente.", "err");
+    cargarClientes();
+  });
+
+  document.querySelectorAll("[data-cerrar]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
+
+  /* ---------- Endpoints ---------- */
+  $("#lista-ep").replaceChildren(...ENDPOINTS.map(e => el("details", { class: "ep" },
+    el("summary", {}, el("span", { class: "metodo m-" + e.m }, e.m), el("code", { class: "ruta" }, e.r), el("span", { class: "que" }, e.q)),
+    el("div", { class: "cuerpo" }, e.b
+      ? el("pre", {}, JSON.stringify(e.b, null, 2))
+      : el("p", { class: "sin" }, e.r.includes("{") ? "Sin cuerpo. El Id va en la ruta, por ejemplo " + e.r.replace("{IdCliente}", "1") + "." : "Sin cuerpo."))
+  )));
+
+  /* ---------- Eventos ---------- */
+  $("#btn-nuevo").addEventListener("click", () => abrirFormulario());
+  $("#filtro").addEventListener("input", e => { estado.filtroTexto = e.target.value; pintarTabla(); });
+  $("#form-id").addEventListener("submit", e => { e.preventDefault(); const v = $("#buscar-id").value; if (v) consultarPorId(v); });
+
+  pintarSesion();
+  pintarTabla();
+  comprobarApi().then(() => { if (estado.sesion) cargarClientes(); });
+})();
+</script>
+</body>
+</html>

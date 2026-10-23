@@ -1,0 +1,122 @@
+﻿############################################################
+# Para probar en tu computadora deja la dirección local.
+# Para probar la versión publicada, comenta la línea local
+# y descomenta la del sitio en línea.
+############################################################
+
+@API.CLIENTES_HostAddress = http://localhost:5010
+# @API.CLIENTES_HostAddress = http://TU-SITIO.runasp.net
+
+
+################################
+# POST
+# Iniciar sesion en base de datos
+################################
+
+POST {{API.CLIENTES_HostAddress}}/api/InicioSesion
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Correo": "admin@apiclientes.com",
+  "Contrasena": "Admin1234"
+}
+
+###
+
+################################
+# POST
+# Iniciar sesion con contraseña incorrecta (debe responder ok = false)
+################################
+
+POST {{API.CLIENTES_HostAddress}}/api/InicioSesion
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Correo": "admin@apiclientes.com",
+  "Contrasena": "otra"
+}
+
+###
+
+
+################################################################
+#                          CLIENTES
+################################################################
+
+################################
+# GET
+# Obtener todos los clientes
+################################
+
+GET {{API.CLIENTES_HostAddress}}/api/Clientes
+Accept: application/json
+
+###
+
+################################
+# GET
+# Obtener un cliente por IdCliente
+################################
+
+GET {{API.CLIENTES_HostAddress}}/api/Clientes/1
+Accept: application/json
+
+###
+
+################################
+# POST
+# Insertar un cliente (devuelve el IdCliente generado)
+################################
+
+POST {{API.CLIENTES_HostAddress}}/api/Clientes
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Cedula": "3-0333-0333",
+  "Nombre": "Andrés",
+  "Apellido1": "Castro",
+  "Apellido2": "Mora",
+  "Telefono": "+506 8899-0011",
+  "Correo": "andres.castro@correo.com",
+  "Direccion": "Cartago centro, 100 m sur de la Basílica",
+  "IdProvincia": 3
+}
+
+###
+
+################################
+# PUT
+# Actualizar un cliente por IdCliente
+# (cambia el 4 por el Id que devolvió el POST)
+################################
+
+PUT {{API.CLIENTES_HostAddress}}/api/Clientes/4
+Content-Type: application/json
+Accept: application/json
+
+{
+  "Cedula": "3-0333-0333",
+  "Nombre": "Andrés",
+  "Apellido1": "Castro",
+  "Apellido2": "Mora",
+  "Telefono": "+506 8899-2222",
+  "Correo": "andres.castro@empresa.com",
+  "Direccion": "Paraíso de Cartago",
+  "IdProvincia": 3
+}
+
+###
+
+################################
+# DELETE
+# Eliminar un cliente por IdCliente
+# (cambia el 4 por el Id que devolvió el POST)
+################################
+
+DELETE {{API.CLIENTES_HostAddress}}/api/Clientes/4
+Accept: application/json
+
+###

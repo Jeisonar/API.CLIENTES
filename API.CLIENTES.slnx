@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="API.CLIENTES/API.CLIENTES.csproj" />
+  <Project Path="API.DAPPER/API.DAPPER.csproj" />
+  <Project Path="API.ENTIDADES/API.ENTIDADES.csproj" />
+  <Project Path="API.LOGICA.NEGOCIO/API.LOGICA.NEGOCIO.csproj" />
+</Solution>
